@@ -61,6 +61,9 @@ check_resource theId = do
   return (resp_status `fmap` resp)
 
 -- | Wait for a resource to return a status task of "Done", then run a BigML Action.
+--
+-- This allows you to sequence asynchronous actions, waiting until a
+-- polling action indicates that the specified resource is ready.
 whenReady :: ResourceID -> BigML (Either String a) -> BigML (Either String a)
 whenReady theId action = do
   eRes <- check_resource theId
