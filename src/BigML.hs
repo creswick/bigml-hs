@@ -31,8 +31,8 @@ create_source :: SourceSpec -> BigML (Either String CreateResponse)
 create_source (FileSource fpath) = do
   uname <- getUsername
   key <- getApiKey
-  sourceUrl <- getSourceUrl
-  liftIO $ postFile sourceUrl uname key fpath
+  url <- getSourceUrl
+  liftIO $ postFile url uname key fpath
 create_source _                  = return (Left "Unsupported source specification")
 
 -- | Create a dataset from a given 'SourceID'
@@ -40,6 +40,14 @@ create_dataset :: SourceID -> BigML (Either String CreateResponse)
 create_dataset theId =  do
   uname <- getUsername
   key <- getApiKey
-  datasetUrl <- getDatasetUrl
-  liftIO $ postJSON datasetUrl uname key theId
+  url <- getDatasetUrl
+  liftIO $ postJSON url uname key theId
+
+-- | Create a model from a given 'DatasetID'
+create_model :: DatasetID -> BigML (Either String CreateResponse)
+create_model theId =  do
+  uname <- getUsername
+  key <- getApiKey
+  url <- getModelUrl
+  liftIO $ postJSON url uname key theId
 

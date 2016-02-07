@@ -45,25 +45,26 @@ type BigML a = StateT BigMLState IO a
 
 -- | Accessor for the username
 getUsername :: BigML String
-getUsername = do
-  state <- get
-  return $ username state
+getUsername = gets username
 
 -- | Accessor for the API key
 getApiKey :: BigML String
-getApiKey = do
-  state <- get
-  return $ api_key state
+getApiKey = gets api_key
 
 getSourceUrl :: BigML String
 getSourceUrl = do
-  state <- get
-  return ((base_url state)  ++ "/source")
+  url <- gets base_url
+  return (url ++ "/source")
 
 getDatasetUrl :: BigML String
 getDatasetUrl = do
-  state <- get
-  return ((base_url state)  ++ "/dataset")
+  url <- gets base_url
+  return (url  ++ "/dataset")
+
+getModelUrl :: BigML String
+getModelUrl = do
+  url <- gets base_url
+  return (url  ++ "/model")
 
 -- | Parse UTC Time from JSON encoded time strings, such as: "2016-02-06T19:24:23.705484"
 parseUTCTime :: String -> Either String UTCTime
@@ -79,7 +80,8 @@ timeformat = "%0Y-%m-%dT%H:%M:%S%Q"
 formatUTCTime :: UTCTime -> String
 formatUTCTime time = formatTime defaultTimeLocale timeformat time
 
-newtype SourceID = SourceID { sourceID :: ResourceID }
+-- | A ResourceID specifically for a source.
+newtype SourceID = SourceID ResourceID
   deriving (Read, Show, Ord, Eq, Generic)
 
 instance A.FromJSON SourceID where
@@ -87,6 +89,16 @@ instance A.FromJSON SourceID where
 
 instance A.ToJSON SourceID where
   toJSON (SourceID rsid) = A.object [ "source" .= rsid ]
+
+-- | A ResourceID specifically for a dataset.
+newtype DatasetID = DatasetID ResourceID
+  deriving (Read, Show, Ord, Eq, Generic)
+
+instance A.FromJSON DatasetID where
+  parseJSON (A.Object v) = DatasetID <$> v .: "dataset"
+
+instance A.ToJSON DatasetID where
+  toJSON (DatasetID rsid) = A.object [ "dataset" .= rsid ]
 
 -- | The ID of a source entry.
 newtype ResourceID = ResourceID { resourceString :: String }
@@ -99,6 +111,9 @@ instance A.FromJSON ResourceID where
 instance A.ToJSON ResourceID where
   toJSON (ResourceID txt) = A.String (T.pack txt)
 
+-- | A generic response type for creating resources.
+--
+-- TODO This could be parameterized over the response resource ID type.
 data CreateResponse = CreateResponse
   { resp_code :: Int
   , resp_resource :: ResourceID
