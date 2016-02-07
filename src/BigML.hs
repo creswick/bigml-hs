@@ -41,6 +41,5 @@ create_dataset theId =  do
   uname <- getUsername
   key <- getApiKey
   datasetUrl <- getDatasetUrl
-  liftIO $ postCreate datasetUrl uname key theId
-
+  liftIO $ postJSON datasetUrl uname key theId
 
