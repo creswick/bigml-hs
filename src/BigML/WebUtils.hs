@@ -20,6 +20,22 @@ import           OpenSSL.Session                       as OpenSSL
 
 import           BigML.Types
 
+getJSON :: (A.FromJSON from)
+        => String -- ^ The url
+        -> String -- ^ Username
+        -> String -- ^ API Key
+        -> IO (Either String from)
+getJSON toUrl username key = do
+  mgr <- HTTP.newManager tlsManagerSettings
+  req <- HTTP.parseUrl toUrl
+  let req' = HTTP.setQueryString
+             [ ("username", Just (C8.pack username))
+             , ("api_key", Just (C8.pack key))
+             ] req
+  resp <- HTTP.httpLbs req' mgr
+  return $ A.eitherDecode (HTTP.responseBody resp)
+
+
 postJSON :: (A.ToJSON to, A.FromJSON from)
            => String -- ^ The url
            -> String -- ^ Username

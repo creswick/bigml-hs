@@ -66,6 +66,11 @@ getModelUrl = do
   url <- gets base_url
   return (url  ++ "/model")
 
+getStatusUrl :: ResourceID -> BigML String
+getStatusUrl theId = do
+  url <- gets base_url
+  return (url ++ "/" ++ resourceString theId)
+
 -- | Parse UTC Time from JSON encoded time strings, such as: "2016-02-06T19:24:23.705484"
 parseUTCTime :: String -> Either String UTCTime
 parseUTCTime dateString =
@@ -119,6 +124,7 @@ data CreateResponse = CreateResponse
   , resp_resource :: ResourceID
 --, resp_object ???
   , resp_error :: Maybe String
+  , resp_status :: Status
   } deriving (Read, Show, Ord, Eq, Generic)
 
 instance A.ToJSON CreateResponse where
@@ -126,6 +132,7 @@ instance A.ToJSON CreateResponse where
     [ "code" .= resp_code
     , "resource" .= resp_resource
     , "error" .= resp_error
+    , "status" .= resp_status
     ]
 
 instance A.FromJSON CreateResponse where
@@ -133,6 +140,7 @@ instance A.FromJSON CreateResponse where
     resp_code <- v .: "code"
     resp_resource <- v .: "resource"
     resp_error <- v .:? "error"
+    resp_status <- v .: "status"
     return CreateResponse {..}
 
 -- legacy parsers from getting some of the full-object details.
@@ -173,6 +181,8 @@ data Status = Status
   { status_code :: Int
   , status_elapsed :: Maybe Int
   , status_message :: String
+  , status_progress :: Maybe Double
+  , status_task :: Maybe String
   } deriving (Read, Show, Ord, Eq, Generic)
 
 instance A.ToJSON Status where
@@ -180,6 +190,8 @@ instance A.ToJSON Status where
     [ "code" .= status_code
     , "elapsed" .= status_elapsed
     , "message" .= status_message
+    , "progress" .= status_progress
+    , "task" .= status_task
     ]
 
 instance A.FromJSON Status where
@@ -187,4 +199,6 @@ instance A.FromJSON Status where
     status_code <- v .: "code"
     status_elapsed <- v .:? "elapsed"
     status_message <- v .: "message"
+    status_progress <- v .:? "progress"
+    status_task <- v .:? "task"
     return Status {..}

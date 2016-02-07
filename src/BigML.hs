@@ -51,3 +51,11 @@ create_model theId =  do
   url <- getModelUrl
   liftIO $ postJSON url uname key theId
 
+-- | Retrieve the status for a given resource.
+check_resource :: ResourceID -> BigML (Either String Status)
+check_resource theId = do
+  uname <- getUsername
+  key <- getApiKey
+  url <- getStatusUrl theId
+  resp <- liftIO $ getJSON url uname key
+  return (resp_status `fmap` resp)
