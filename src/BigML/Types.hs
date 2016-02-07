@@ -5,6 +5,7 @@
 module BigML.Types
 where
 
+import           Control.Concurrent (threadDelay)
 import qualified Control.Exception as X
 import           Control.Monad.State
 import           Data.Aeson ((.:), (.=), (.:?))
@@ -24,6 +25,7 @@ import           Data.Time.Format
 data BigMLState = BigMLState { username :: String
                              , api_key :: String
                              , base_url :: String
+                             , poll_delay :: Int -- ^ The time to wait between polling requests, in microseconds.
                              } deriving (Read, Show)
 
 -- | A default initial state for issuing development queries.
@@ -31,6 +33,7 @@ devState :: BigMLState
 devState = BigMLState { username = ""
                       , api_key = ""
                       , base_url = "https://bigml.io/dev"
+                      , poll_delay = 5000000 -- 5 seconds
                       }
 
 -- | A default initial state for production.
@@ -38,10 +41,17 @@ prodState :: BigMLState
 prodState = BigMLState { username = ""
                        , api_key = ""
                        , base_url = "https://bigml.io"
+                       , poll_delay = 5000000 -- 5 seconds
                        }
 
 -- | The BigML monad.
 type BigML a = StateT BigMLState IO a
+
+-- | Wait for the `poll_delay`
+doDelay :: BigML ()
+doDelay = do
+  delay <- gets poll_delay
+  liftIO $ threadDelay delay
 
 -- | Accessor for the username
 getUsername :: BigML String

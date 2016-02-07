@@ -59,3 +59,14 @@ check_resource theId = do
   url <- getStatusUrl theId
   resp <- liftIO $ getJSON url uname key
   return (resp_status `fmap` resp)
+
+-- | Wait for a resource to return a status task of "Done", then run a BigML Action.
+whenReady :: ResourceID -> BigML (Either String a) -> BigML (Either String a)
+whenReady theId action = do
+  eRes <- check_resource theId
+  case eRes of
+    Left     err -> return $ Left err
+    Right status -> case status_task status of
+                      (Just "Done") -> doDelay >> action
+                      _ -> whenReady theId action
+
