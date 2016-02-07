@@ -3,34 +3,44 @@ module BigML
 
 where
 
+import           Control.Monad.State
 import qualified Data.Aeson as A
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
 import           Control.Monad.Trans.Resource (runResourceT)
 import           Network.URI (URI)
-import           OpenSSL.Session                       as OpenSSL
+import           OpenSSL.Session as OpenSSL
 
 import           BigML.Types
 import           BigML.WebUtils
 
--- | Sources:
+-- | Run a BigML action.
+runBigML :: BigMLState -> BigML a -> IO a
+runBigML init actions = do
+  (res, _) <- runStateT actions init
+  return res
+
+-- | Different means of specifying a source:
 data SourceSpec = FileSource FilePath
                 | RemoteSource URI
                 | InlineSource A.Object
 
-create_source :: SourceSpec -> IO (Either String CreateResponse)
-create_source (FileSource fpath) = postFile "https://bigml.io/dev/source" "rcreswick" "26f9ab4099d8a0bcab2eec99cbea7f46580898bc" fpath
+-- | Create a source from a file, uri, or in-line object. (Only files are supported at the moment.)
+create_source :: SourceSpec -> BigML (Either String CreateResponse)
+create_source (FileSource fpath) = do
+  uname <- getUsername
+  key <- getApiKey
+  sourceUrl <- getSourceUrl
+  liftIO $ postFile sourceUrl uname key fpath
 create_source _                  = return (Left "Unsupported source specification")
 
+-- | Create a dataset from a given 'SourceID'
+create_dataset :: SourceID -> BigML (Either String CreateResponse)
+create_dataset theId =  do
+  uname <- getUsername
+  key <- getApiKey
+  datasetUrl <- getDatasetUrl
+  liftIO $ postCreate datasetUrl uname key theId
 
-create_dataset :: SourceID -> IO (Either String CreateResponse)
-create_dataset theId = postCreate "https://bigml.io/dev/dataset" "rcreswick" "26f9ab4099d8a0bcab2eec99cbea7f46580898bc" theId
-
--- list_sources :: IO (Either String [SourceID])
--- list_sources =
-
--- retrieve_source :: SourceID -> IO (Either String...)
--- update_source
--- delete_source
 

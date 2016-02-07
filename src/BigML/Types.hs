@@ -6,6 +6,7 @@ module BigML.Types
 where
 
 import qualified Control.Exception as X
+import           Control.Monad.State
 import           Data.Aeson ((.:), (.=), (.:?))
 import qualified Data.Aeson as A
 import           Data.Text (Text)
@@ -16,6 +17,53 @@ import           GHC.Generics
 -- import           System.Locale
 import           Data.Time
 import           Data.Time.Format
+
+-- | The 'BigML' monad uses this state type to store the username, api
+-- key, and base url (which controls the dev / production nature of
+-- your requests).
+data BigMLState = BigMLState { username :: String
+                             , api_key :: String
+                             , base_url :: String
+                             } deriving (Read, Show)
+
+-- | A default initial state for issuing development queries.
+devState :: BigMLState
+devState = BigMLState { username = ""
+                      , api_key = ""
+                      , base_url = "https://bigml.io/dev"
+                      }
+
+-- | A default initial state for production.
+prodState :: BigMLState
+prodState = BigMLState { username = ""
+                       , api_key = ""
+                       , base_url = "https://bigml.io"
+                       }
+
+-- | The BigML monad.
+type BigML a = StateT BigMLState IO a
+
+-- | Accessor for the username
+getUsername :: BigML String
+getUsername = do
+  state <- get
+  return $ username state
+
+-- | Accessor for the API key
+getApiKey :: BigML String
+getApiKey = do
+  state <- get
+  return $ api_key state
+
+getSourceUrl :: BigML String
+getSourceUrl = do
+  state <- get
+  return ((base_url state)  ++ "/source")
+
+getDatasetUrl :: BigML String
+getDatasetUrl = do
+  state <- get
+  return ((base_url state)  ++ "/dataset")
 
 -- | Parse UTC Time from JSON encoded time strings, such as: "2016-02-06T19:24:23.705484"
 parseUTCTime :: String -> Either String UTCTime
@@ -71,6 +119,11 @@ instance A.FromJSON CreateResponse where
     resp_resource <- v .: "resource"
     resp_error <- v .:? "error"
     return CreateResponse {..}
+
+-- legacy parsers from getting some of the full-object details.
+--
+-- TODO: find a canonical specification for the JSON objects that come back,
+-- so this isn't just guess-work.
 
 data SourceParser = SourceParser
   { sp_header :: Maybe Bool

@@ -29,6 +29,7 @@ library
                        http-types                >= 0.8,
                        network-uri,
                        resourcet,
+                       mtl,
                        time,
                        text
 
